@@ -71,6 +71,32 @@
   },
   "footer": {
     "privacy": "All your files are processed locally.",
-    "builtWith": "Built with Next.js · WebAssembly · WebCodecs"
+    "builtWith": "Built with Next.js · WebAssembly · WebCodecs",
+    "privacyLink": "Privacy",
+    "termsLink": "Terms"
+  },
+  "legal": {
+    "privacyTitle": "Privacy policy",
+    "termsTitle": "Terms of use",
+    "lastUpdated": "Last updated: March 2026",
+    "backHome": "Back home",
+    "privacyContent": {
+      "intro": "At LionMedia Compress, your privacy is not an option, it is our technological foundation.",
+      "points": [
+        "Local Processing: 100% of compression happens in your browser (Client-side).",
+        "No Servers: Your files are never uploaded to any external server.",
+        "No Tracking: We do not collect personal data or file content.",
+        "Security: We use WebAssembly for isolated and secure processing."
+      ]
+    },
+    "termsContent": {
+      "intro": "By using our tool, you agree to a service based on freedom and privacy.",
+      "points": [
+        "Free Use: No file limits or subscriptions.",
+        "No Warranties: The service is provided 'as is'. We are not responsible for data loss.",
+        "Responsibility: You own your files and their content.",
+        "Open Code: Our technology is transparent and auditable."
+      ]
+    }
   }
 }
