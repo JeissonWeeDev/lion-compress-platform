@@ -17,6 +17,7 @@ export type WorkerResponse =
       id: string;
       blob: Blob;
       size: number;
+      savings: number;
       outputFormat: string;
       duration: number;
     }

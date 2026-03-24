@@ -1,51 +1,59 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import { useAppStore } from "@/store/app-store";
 import type { WorkerRequest, WorkerResponse } from "@/lib/compression/worker-types";
+import { resolveOutputMime, resolveQuality, calcSavings } from "@/lib/compression/engine";
 
 const MAX_CONCURRENT = 2;
 
 /**
- * Watches the file queue and runs image compression via a Web Worker.
- * Falls back to main-thread Canvas if OffscreenCanvas isn't available (older Safari).
+ * Manages image compression.
+ *
+ * Compression ONLY starts when the user explicitly triggers it via
+ * triggerCompression() in the store. Files added before or after that click
+ * stay in "queued" state until the next trigger.
+ *
+ * Once a session starts it drains the queue automatically (up to MAX_CONCURRENT
+ * at a time) until every queued file is processed. New files added mid-session
+ * join the active session. New files added AFTER the session ends wait for the
+ * next explicit trigger.
  */
 export function useCompression() {
-  const files = useAppStore((s) => s.files);
-  const updateFile = useAppStore((s) => s.updateFile);
-  const settings = useAppStore((s) => s.settings);
+  const files              = useAppStore((s) => s.files);
+  const updateFile         = useAppStore((s) => s.updateFile);
+  const settings           = useAppStore((s) => s.settings);
+  const compressionTrigger = useAppStore((s) => s.compressionTrigger);
 
-  // Active IDs being compressed right now
-  const activeIds = useRef<Set<string>>(new Set());
+  const activeIds          = useRef<Set<string>>(new Set());
+  const workerRef          = useRef<Worker | null>(null);
+  const hasOffscreen       = useRef<boolean | null>(null);
 
-  // Lazily created worker — reused across compressions
-  const workerRef = useRef<Worker | null>(null);
+  // Session tracking — avoids re-using an old trigger value for new files
+  const isSessionActive       = useRef(false);
+  const lastProcessedTrigger  = useRef(0);
 
-  // Whether OffscreenCanvas is available
-  const hasOffscreenCanvas = useRef<boolean | null>(null);
-
-  // Stable reference to updateFile so the effect doesn't re-subscribe needlessly
+  // Stable ref so worker callbacks never capture a stale updateFile
   const updateFileRef = useRef(updateFile);
   updateFileRef.current = updateFile;
 
-  // ── Worker initialization ──────────────────────────────────────────────────
+  // ── Worker ────────────────────────────────────────────────────────────────
 
-  const getWorker = useCallback((): Worker | null => {
+  function getWorker(): Worker | null {
     if (workerRef.current) return workerRef.current;
 
-    // Check once
-    if (hasOffscreenCanvas.current === null) {
-      hasOffscreenCanvas.current = typeof OffscreenCanvas !== "undefined";
+    if (hasOffscreen.current === null) {
+      hasOffscreen.current = typeof OffscreenCanvas !== "undefined";
     }
-    if (!hasOffscreenCanvas.current) return null;
+    if (!hasOffscreen.current) return null;
 
     try {
-      const worker = new Worker(
+      const w = new Worker(
         new URL("../../workers/image.worker.ts", import.meta.url),
         { type: "module" }
       );
 
-      worker.onmessage = (e: MessageEvent<WorkerResponse>) => {
+      w.onmessage = (e: MessageEvent<WorkerResponse>) => {
         const msg = e.data;
         const { id } = msg;
 
@@ -57,19 +65,15 @@ export function useCompression() {
         activeIds.current.delete(id);
 
         if (msg.type === "done") {
-          const { blob, size, outputFormat, duration } = msg;
-          const originalSize = useAppStore.getState().files.find((f) => f.id === id)?.size ?? size;
-          const savings = Math.max(0, ((originalSize - size) / originalSize) * 100);
-
           updateFileRef.current(id, {
             status: "completed",
             progress: 100,
             result: {
-              blob,
-              size,
-              savings,
-              outputFormat,
-              duration,
+              blob:         msg.blob,
+              size:         msg.size,
+              savings:      msg.savings,
+              outputFormat: msg.outputFormat,
+              duration:     msg.duration,
             },
           });
         } else if (msg.type === "error") {
@@ -81,9 +85,8 @@ export function useCompression() {
         }
       };
 
-      worker.onerror = (err) => {
-        console.error("[image.worker] error:", err.message);
-        // Mark all active items as errored
+      w.onerror = (err) => {
+        console.error("[image.worker] crash:", err.message);
         for (const id of activeIds.current) {
           updateFileRef.current(id, {
             status: "error",
@@ -91,131 +94,130 @@ export function useCompression() {
           });
         }
         activeIds.current.clear();
-        workerRef.current = null; // allow re-creation on next attempt
+        workerRef.current = null;
       };
 
-      workerRef.current = worker;
-      return worker;
+      workerRef.current = w;
+      return w;
     } catch {
       return null;
     }
-  }, []);
+  }
 
-  // ── Main-thread fallback (no OffscreenCanvas) ──────────────────────────────
+  // ── Main-thread fallback ──────────────────────────────────────────────────
 
-  const compressOnMainThread = useCallback(
-    async (id: string, file: File) => {
-      const currentSettings = useAppStore.getState().settings;
-      updateFileRef.current(id, { status: "processing", progress: 10 });
+  async function compressOnMainThread(id: string, file: File) {
+    const s = useAppStore.getState().settings;
+    updateFileRef.current(id, { status: "processing", progress: 10 });
 
-      try {
-        const bitmap = await createImageBitmap(file);
-        updateFileRef.current(id, { progress: 40 });
+    try {
+      const bitmap = await createImageBitmap(file);
+      updateFileRef.current(id, { progress: 40 });
 
-        // Determine output MIME based on settings
-        const fmt = currentSettings.outputFormat;
-        let mime = "image/webp"; // safe default
-        let ext = "webp";
-        if (fmt !== "same") {
-          mime = fmt === "jpeg" ? "image/jpeg" : `image/${fmt}`;
-          ext = fmt;
-        } else {
-          const m: Record<string, { mime: string; ext: string }> = {
-            "image/jpeg": { mime: "image/jpeg", ext: "jpeg" },
-            "image/png": { mime: "image/png", ext: "png" },
-            "image/webp": { mime: "image/webp", ext: "webp" },
-            "image/avif": { mime: "image/avif", ext: "avif" },
-          };
-          const r = m[file.type];
-          if (r) { mime = r.mime; ext = r.ext; }
-        }
+      const { mime, ext } = resolveOutputMime(s, file.type);
+      const quality       = resolveQuality(s, mime);
 
-        const quality =
-          currentSettings.mode === "custom"
-            ? currentSettings.quality / 100
-            : mime.includes("webp") ? 0.8 : 0.82;
+      const canvas = document.createElement("canvas");
+      canvas.width  = bitmap.width;
+      canvas.height = bitmap.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas 2D context unavailable");
+      ctx.drawImage(bitmap, 0, 0);
+      bitmap.close();
+      updateFileRef.current(id, { progress: 70 });
 
-        const canvas = document.createElement("canvas");
-        canvas.width = bitmap.width;
-        canvas.height = bitmap.height;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) throw new Error("Canvas 2D context unavailable");
-        ctx.drawImage(bitmap, 0, 0);
-        bitmap.close();
-        updateFileRef.current(id, { progress: 70 });
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+          (b) => (b ? resolve(b) : reject(new Error("toBlob returned null"))),
+          mime,
+          quality
+        );
+      });
 
-        const blob = await new Promise<Blob>((resolve, reject) => {
-          canvas.toBlob(
-            (b) => (b ? resolve(b) : reject(new Error("toBlob returned null"))),
-            mime,
-            quality
-          );
-        });
+      updateFileRef.current(id, { progress: 95 });
 
-        updateFileRef.current(id, { progress: 95 });
+      const useOriginal = blob.size >= file.size;
+      const finalBlob   = useOriginal ? file : blob;
+      const finalExt    = useOriginal ? (file.name.split(".").pop() ?? ext) : ext;
 
-        const finalBlob = blob.size < file.size ? blob : file;
-        const finalExt = blob.size < file.size ? ext : (file.name.split(".").pop() ?? ext);
-        const savings = Math.max(0, ((file.size - finalBlob.size) / file.size) * 100);
-
-        updateFileRef.current(id, {
-          status: "completed",
-          progress: 100,
-          result: {
-            blob: finalBlob,
-            size: finalBlob.size,
-            savings,
-            outputFormat: finalExt,
-            duration: 0,
-          },
-        });
-      } catch (err) {
-        updateFileRef.current(id, {
-          status: "error",
-          progress: 0,
-          error: err instanceof Error ? err.message : "Compression failed",
-        });
-      } finally {
-        activeIds.current.delete(id);
-      }
-    },
-    []
-  );
+      updateFileRef.current(id, {
+        status: "completed",
+        progress: 100,
+        result: {
+          blob:         finalBlob,
+          size:         finalBlob.size,
+          savings:      calcSavings(file.size, finalBlob.size),
+          outputFormat: finalExt,
+          duration:     0,
+        },
+      });
+    } catch (err) {
+      updateFileRef.current(id, {
+        status: "error",
+        progress: 0,
+        error: err instanceof Error ? err.message : "Compression failed",
+      });
+    } finally {
+      activeIds.current.delete(id);
+    }
+  }
 
   // ── Queue processor ────────────────────────────────────────────────────────
-
+  //
+  // Runs whenever files or compressionTrigger changes.
+  //
+  // Session lifecycle:
+  //   trigger counter increments → start session
+  //   no more queued/active files → end session
+  //   new files added after session ends → stay queued until next trigger
+  //
   useEffect(() => {
+    // ── Start a new session when the trigger counter increments ──
+    if (compressionTrigger > lastProcessedTrigger.current) {
+      lastProcessedTrigger.current = compressionTrigger;
+      isSessionActive.current = true;
+    }
+
+    // Nothing to do if no active session
+    if (!isSessionActive.current) return;
+
     const queued = files.filter(
-      (f) => f.status === "queued" && f.type === "image" && !activeIds.current.has(f.id)
+      (f) =>
+        f.status === "queued" &&
+        f.type === "image" &&
+        !activeIds.current.has(f.id)
     );
 
-    if (queued.length === 0) return;
+    // End session when everything is done
+    if (queued.length === 0 && activeIds.current.size === 0) {
+      isSessionActive.current = false;
+      return;
+    }
+
     const slots = MAX_CONCURRENT - activeIds.current.size;
-    if (slots <= 0) return;
+    if (slots <= 0 || queued.length === 0) return;
 
     const toProcess = queued.slice(0, slots);
-    const worker = getWorker();
+    const worker    = getWorker();
 
-    for (const fileItem of toProcess) {
-      activeIds.current.add(fileItem.id);
-      updateFile(fileItem.id, { status: "processing", progress: 5 });
+    for (const item of toProcess) {
+      activeIds.current.add(item.id);
+      updateFile(item.id, { status: "processing", progress: 5 });
 
       if (worker) {
-        // Off-main-thread via OffscreenCanvas worker
-        const req: WorkerRequest = {
-          id: fileItem.id,
-          file: fileItem.file,
-          settings,
-        };
+        const req: WorkerRequest = { id: item.id, file: item.file, settings };
         worker.postMessage(req);
       } else {
-        // Main-thread fallback
-        compressOnMainThread(fileItem.id, fileItem.file);
+        compressOnMainThread(item.id, item.file);
       }
     }
-  }, [files, settings, updateFile, getWorker, compressOnMainThread]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [files, compressionTrigger]);
+  // Note: settings, updateFile, getWorker are intentionally excluded — they are
+  // either stable references or accessed via refs/getState() to avoid re-firing
+  // the effect when only settings change (that would auto-restart compression).
 
-  // ── Cleanup on unmount ─────────────────────────────────────────────────────
+  // ── Cleanup ────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     return () => {
