@@ -1,0 +1,71 @@
+{
+  "metadata": {
+    "title": "LionMedia Compress — Compress images and video in your browser",
+    "description": "Compress images (JPG, PNG, WebP, AVIF) and video (MP4, WebM) directly in your browser. 100% private, free, no limits. Powered by WebAssembly and WebCodecs."
+  },
+  "hero": {
+    "title": "Compress images and video.",
+    "titleHighlight": "In your browser.",
+    "subtitle": "100% local processing. Your files never leave your device.",
+    "trustPrivacy": "100% Private",
+    "trustHardware": "Hardware accelerated",
+    "trustLimits": "No size limits"
+  },
+  "dropzone": {
+    "idle": "Drop your files here",
+    "dragging": "Release your files here",
+    "hint": "or click to select · Ctrl+V to paste",
+    "button": "Select files",
+    "regionLabel": "File upload area",
+    "errorEmpty": "The file is empty.",
+    "errorUnsupported": "Format .{ext} not supported. Use JPG, PNG, WebP, AVIF, MP4 or WebM.",
+    "errorVideoSize": "The video exceeds the 2 GB limit.",
+    "errorImageSize": "The image exceeds the 200 MB limit."
+  },
+  "fileList": {
+    "regionLabel": "Loaded files",
+    "fileOne": "file",
+    "fileOther": "files",
+    "downloadAll": "Download all",
+    "clear": "Clear",
+    "clearLabel": "Remove all files"
+  },
+  "fileCard": {
+    "remove": "Remove file",
+    "download": "Download",
+    "defaultError": "We couldn't process this file."
+  },
+  "settings": {
+    "title": "Settings",
+    "compressionMode": "Compression mode",
+    "lossless": "Lossless",
+    "losslessDesc": "Optimize without reducing quality",
+    "balanced": "Balanced",
+    "balancedDesc": "Best quality/size ratio",
+    "custom": "Custom",
+    "customDesc": "Full control with slider",
+    "quality": "Quality",
+    "qualityMin": "Minimum",
+    "qualityMax": "Maximum",
+    "outputFormat": "Output format",
+    "formatSame": "Same format",
+    "stripMetadata": "Remove metadata",
+    "stripMetadataDesc": "Strips EXIF, GPS and device data"
+  },
+  "privacy": {
+    "note": "Your files are processed exclusively on your device.",
+    "noteHighlight": "They are never uploaded to any server."
+  },
+  "theme": {
+    "toDark": "Switch to dark mode",
+    "toLight": "Switch to light mode"
+  },
+  "language": {
+    "switchTo": "Español",
+    "switchLabel": "Switch to Spanish"
+  },
+  "footer": {
+    "privacy": "All your files are processed locally.",
+    "builtWith": "Built with Next.js · WebAssembly · WebCodecs"
+  }
+}

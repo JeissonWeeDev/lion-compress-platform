@@ -1,6 +1,7 @@
 "use client";
 
 import { useAppStore } from "@/store/app-store";
+import { useDict } from "@/lib/i18n/context";
 import { DropZone } from "@/components/drop-zone/DropZone";
 import { FileList } from "@/components/file-list/FileList";
 import { SettingsPanel } from "@/components/settings/SettingsPanel";
@@ -9,6 +10,7 @@ import { usePaste } from "@/hooks/usePaste";
 export function AppShell() {
   usePaste();
   const hasFiles = useAppStore((s) => s.files.length > 0);
+  const dict = useDict();
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6">
@@ -26,9 +28,9 @@ export function AppShell() {
       {/* Privacy note — shown before any file is added */}
       {!hasFiles && (
         <p className="text-center text-xs text-text-tertiary">
-          Tus archivos se procesan exclusivamente en tu dispositivo.{" "}
+          {dict.privacy.note}{" "}
           <span className="font-medium text-text-secondary">
-            Nunca se suben a ningún servidor.
+            {dict.privacy.noteHighlight}
           </span>
         </p>
       )}

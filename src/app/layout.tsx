@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { DictionaryProvider } from "@/lib/i18n/context";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/get-locale";
 import "./globals.css";
 
 const inter = Inter({
@@ -15,50 +18,51 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "LionMedia Compress — Comprime imágenes y video en tu navegador",
-  description:
-    "Comprime imágenes (JPG, PNG, WebP, AVIF) y video (MP4, WebM) directamente en tu navegador. 100% privado, gratuito, sin límites. Acelerado por WebAssembly y WebCodecs.",
-  keywords: [
-    "compresor de imágenes",
-    "comprimir video online",
-    "compresión sin subir archivos",
-    "privacidad",
-    "WebAssembly",
-    "client-side compression",
-  ],
-  metadataBase: new URL("https://lioncompress.dev"),
-  openGraph: {
-    title: "LionMedia Compress",
-    description: "Compresión de imágenes y video. En tu navegador. Gratis.",
-    url: "https://lioncompress.dev",
-    siteName: "LionMedia Compress",
-    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "LionMedia Compress",
-    description: "Compresión de imágenes y video. En tu navegador. Gratis.",
-    images: ["/og-image.png"],
-  },
-  robots: { index: true, follow: true },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const dict = await getDictionary(locale);
 
-export default function RootLayout({
+  return {
+    title: dict.metadata.title,
+    description: dict.metadata.description,
+    metadataBase: new URL("https://lioncompress.dev"),
+    openGraph: {
+      title: "LionMedia Compress",
+      description: dict.hero.subtitle,
+      url: "https://lioncompress.dev",
+      siteName: "LionMedia Compress",
+      images: [{ url: "/og-image.png", width: 1200, height: 630 }],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "LionMedia Compress",
+      description: dict.hero.subtitle,
+      images: ["/og-image.png"],
+    },
+    robots: { index: true, follow: true },
+  };
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const dict = await getDictionary(locale);
+
   return (
     <html
-      lang="es"
+      lang={locale}
       suppressHydrationWarning
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-bg-primary text-text-primary">
         <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
-          {children}
+          <DictionaryProvider dict={dict} locale={locale}>
+            {children}
+          </DictionaryProvider>
         </ThemeProvider>
       </body>
     </html>

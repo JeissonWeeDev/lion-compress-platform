@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Upload, FolderOpen } from "lucide-react";
 import { clsx } from "clsx";
 import { useAppStore } from "@/store/app-store";
+import { useDict } from "@/lib/i18n/context";
 import { ALL_SUPPORTED_TYPES, getFileMimeFromMagicBytes } from "@/lib/utils/browser-support";
 import { Button } from "@/components/ui/Button";
 
@@ -12,24 +13,26 @@ const ACCEPT = ".jpg,.jpeg,.png,.webp,.avif,.mp4,.webm,.mov";
 const MAX_IMAGE_SIZE = 200 * 1024 * 1024; // 200 MB
 const MAX_VIDEO_SIZE = 2 * 1024 * 1024 * 1024; // 2 GB
 
-async function validateFile(file: File): Promise<string | null> {
-  if (file.size === 0) return "El archivo está vacío.";
+type ValidationError =
+  | { type: "empty" }
+  | { type: "unsupported"; ext: string }
+  | { type: "videoSize" }
+  | { type: "imageSize" };
+
+async function validateFile(file: File): Promise<ValidationError | null> {
+  if (file.size === 0) return { type: "empty" };
 
   const mime = await getFileMimeFromMagicBytes(file);
   const effectiveMime = mime ?? file.type;
 
   if (!ALL_SUPPORTED_TYPES.has(effectiveMime)) {
-    const ext = file.name.split(".").pop()?.toUpperCase() ?? "desconocido";
-    return `Formato .${ext} no soportado. Usa JPG, PNG, WebP, AVIF, MP4 o WebM.`;
+    const ext = file.name.split(".").pop()?.toUpperCase() ?? "unknown";
+    return { type: "unsupported", ext };
   }
 
   const isVideo = effectiveMime.startsWith("video/");
-  if (isVideo && file.size > MAX_VIDEO_SIZE) {
-    return "El video supera el límite de 2 GB.";
-  }
-  if (!isVideo && file.size > MAX_IMAGE_SIZE) {
-    return "La imagen supera el límite de 200 MB.";
-  }
+  if (isVideo && file.size > MAX_VIDEO_SIZE) return { type: "videoSize" };
+  if (!isVideo && file.size > MAX_IMAGE_SIZE) return { type: "imageSize" };
 
   return null;
 }
@@ -78,9 +81,26 @@ async function traverseDirectory(
 
 export function DropZone() {
   const addFiles = useAppStore((s) => s.addFiles);
+  const dict = useDict();
   const [isDragging, setIsDragging] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const translateError = useCallback(
+    (err: ValidationError): string => {
+      switch (err.type) {
+        case "empty":
+          return dict.dropzone.errorEmpty;
+        case "unsupported":
+          return dict.dropzone.errorUnsupported.replace("{ext}", err.ext);
+        case "videoSize":
+          return dict.dropzone.errorVideoSize;
+        case "imageSize":
+          return dict.dropzone.errorImageSize;
+      }
+    },
+    [dict]
+  );
 
   const processFiles = useCallback(
     async (rawFiles: File[]) => {
@@ -90,7 +110,7 @@ export function DropZone() {
       for (const file of rawFiles) {
         const err = await validateFile(file);
         if (err) {
-          errs.push(`${file.name}: ${err}`);
+          errs.push(`${file.name}: ${translateError(err)}`);
         } else {
           valid.push(file);
         }
@@ -102,7 +122,7 @@ export function DropZone() {
         setTimeout(() => setErrors([]), 5000);
       }
     },
-    [addFiles]
+    [addFiles, translateError]
   );
 
   const handleDrop = useCallback(
@@ -139,45 +159,55 @@ export function DropZone() {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onClick={() => inputRef.current?.click()}
+        whileHover={{ 
+          scale: 1.005,
+          borderColor: "var(--border-hover)",
+          backgroundColor: "var(--bg-tertiary-hover, color-mix(in srgb, var(--bg-tertiary) 40%, transparent))"
+        }}
         animate={{
-          scale: isDragging ? 1.01 : 1,
+          scale: isDragging ? 1.02 : 1,
           borderColor: isDragging
             ? "var(--accent-primary)"
             : "var(--border-default)",
           backgroundColor: isDragging
-            ? "color-mix(in srgb, var(--accent-primary) 5%, transparent)"
+            ? "color-mix(in srgb, var(--accent-primary) 8%, transparent)"
             : "transparent",
         }}
-        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
         role="region"
-        aria-label="Zona de carga de archivos"
+        aria-label={dict.dropzone.regionLabel}
         className={clsx(
-          "flex min-h-[280px] cursor-pointer flex-col items-center justify-center gap-5",
+          "group flex min-h-[280px] cursor-pointer flex-col items-center justify-center gap-5",
           "rounded-[var(--radius-xl)] border-2 border-dashed border-border",
-          "transition-colors duration-150 select-none",
-          "hover:border-border-hover hover:bg-bg-tertiary/40"
+          "transition-colors duration-200 select-none"
         )}
       >
         <motion.div
-          animate={{ y: isDragging ? -4 : 0 }}
-          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          animate={{ y: isDragging ? -8 : 0 }}
+          transition={{ duration: 0.3, ease: [0.34, 1.56, 0.64, 1] }}
           className="flex flex-col items-center gap-4 text-center"
         >
-          <div className="flex size-14 items-center justify-center rounded-[var(--radius-lg)] bg-bg-tertiary">
+          <motion.div 
+            animate={isDragging ? {
+              scale: [1, 1.1, 1],
+              transition: { repeat: Infinity, duration: 1.5 }
+            } : {
+              scale: 1
+            }}
+            className="flex size-14 items-center justify-center rounded-[var(--radius-lg)] bg-bg-tertiary shadow-sm transition-shadow group-hover:shadow-md"
+          >
             {isDragging ? (
-              <Upload size={24} className="text-accent" strokeWidth={2} />
+              <Upload size={24} className="text-accent" strokeWidth={2.5} />
             ) : (
-              <FolderOpen size={24} className="text-text-tertiary" strokeWidth={1.5} />
+              <FolderOpen size={24} className="text-text-tertiary group-hover:text-text-secondary transition-colors" strokeWidth={1.5} />
             )}
-          </div>
+          </motion.div>
 
           <div className="space-y-1">
             <p className="text-base font-medium text-text-primary">
-              {isDragging ? "Suelta tus archivos aquí" : "Arrastra tus archivos aquí"}
+              {isDragging ? dict.dropzone.dragging : dict.dropzone.idle}
             </p>
-            <p className="text-sm text-text-tertiary">
-              o haz clic para seleccionar · Ctrl+V para pegar
-            </p>
+            <p className="text-sm text-text-tertiary">{dict.dropzone.hint}</p>
           </div>
 
           <div className="flex flex-wrap justify-center gap-1.5">
@@ -202,7 +232,7 @@ export function DropZone() {
           className="gap-2"
         >
           <Upload size={14} />
-          Seleccionar archivos
+          {dict.dropzone.button}
         </Button>
       </motion.div>
 

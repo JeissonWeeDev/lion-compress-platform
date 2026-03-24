@@ -2,6 +2,7 @@
 
 import { Container } from "./Container";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
+import { LanguageToggle } from "@/components/common/LanguageToggle";
 import { Zap } from "lucide-react";
 
 export function Header() {
@@ -16,7 +17,8 @@ export function Header() {
           <span className="text-sm tracking-tight">LionCompress</span>
         </a>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1">
+          <LanguageToggle />
           <ThemeToggle />
         </div>
       </Container>

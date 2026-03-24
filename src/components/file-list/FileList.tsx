@@ -3,6 +3,7 @@
 import { AnimatePresence } from "framer-motion";
 import { Trash2, Download } from "lucide-react";
 import { useAppStore } from "@/store/app-store";
+import { useDict } from "@/lib/i18n/context";
 import { FileCard } from "./FileCard";
 import { Button } from "@/components/ui/Button";
 import { formatBytes } from "@/lib/utils/format-bytes";
@@ -12,6 +13,7 @@ export function FileList() {
   const files = useAppStore((s) => s.files);
   const clearAll = useAppStore((s) => s.clearAll);
   const getCompletedFiles = useAppStore((s) => s.getCompletedFiles);
+  const dict = useDict();
 
   if (files.length === 0) return null;
 
@@ -21,6 +23,8 @@ export function FileList() {
     (acc, f) => acc + (f.result?.size ?? 0),
     0
   );
+
+  const fileWord = files.length === 1 ? dict.fileList.fileOne : dict.fileList.fileOther;
 
   const handleDownloadAll = async () => {
     if (completed.length === 0) return;
@@ -43,11 +47,11 @@ export function FileList() {
   };
 
   return (
-    <section className="space-y-4" aria-label="Archivos cargados">
+    <section className="space-y-4" aria-label={dict.fileList.regionLabel}>
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-text-secondary">
-          {files.length} {files.length === 1 ? "archivo" : "archivos"}
+          {files.length} {fileWord}
           {completed.length > 0 && totalCompressed > 0 && (
             <span className="ml-1 text-text-tertiary">
               · {formatBytes(totalOriginal)} → {formatBytes(totalCompressed)}
@@ -64,7 +68,7 @@ export function FileList() {
               className="gap-1.5"
             >
               <Download size={13} />
-              Descargar todo
+              {dict.fileList.downloadAll}
             </Button>
           )}
           <Button
@@ -72,10 +76,10 @@ export function FileList() {
             size="sm"
             onClick={clearAll}
             className="gap-1.5 text-text-tertiary hover:text-error"
-            aria-label="Eliminar todos los archivos"
+            aria-label={dict.fileList.clearLabel}
           >
             <Trash2 size={13} />
-            Limpiar
+            {dict.fileList.clear}
           </Button>
         </div>
       </div>

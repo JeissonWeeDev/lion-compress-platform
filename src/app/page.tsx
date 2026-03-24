@@ -1,9 +1,14 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Container } from "@/components/layout/Container";
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { getLocale } from "@/lib/i18n/get-locale";
 import { AppShell } from "./AppShell";
 
-export default function Home() {
+export default async function Home() {
+  const locale = await getLocale();
+  const dict = await getDictionary(locale);
+
   return (
     <>
       <Header />
@@ -12,30 +17,28 @@ export default function Home() {
           {/* Hero copy */}
           <div className="mx-auto max-w-2xl space-y-3 text-center">
             <h1 className="text-4xl font-bold tracking-tight text-text-primary sm:text-5xl">
-              Comprime imágenes y video.{" "}
+              {dict.hero.title}{" "}
               <span
                 className="bg-clip-text text-transparent"
                 style={{ backgroundImage: "var(--accent-gradient)" }}
               >
-                En tu navegador.
+                {dict.hero.titleHighlight}
               </span>
             </h1>
-            <p className="text-base text-text-secondary">
-              Procesamiento 100% local. Tus archivos nunca salen de tu dispositivo.
-            </p>
+            <p className="text-base text-text-secondary">{dict.hero.subtitle}</p>
             {/* Trust indicators */}
             <div className="flex flex-wrap justify-center gap-4 pt-2 text-xs text-text-tertiary">
               <span className="flex items-center gap-1.5">
                 <span className="inline-block size-1.5 rounded-full bg-success" />
-                100% Privado
+                {dict.hero.trustPrivacy}
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="inline-block size-1.5 rounded-full bg-accent" />
-                Acelerado por hardware
+                {dict.hero.trustHardware}
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="inline-block size-1.5 rounded-full bg-purple-500" />
-                Sin límites de tamaño
+                {dict.hero.trustLimits}
               </span>
             </div>
           </div>

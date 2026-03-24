@@ -1,34 +1,36 @@
 "use client";
 
 import { useAppStore } from "@/store/app-store";
+import { useDict } from "@/lib/i18n/context";
 import { CompressionMode, OutputFormat } from "@/types/compression";
 import { clsx } from "clsx";
-
-const MODES: { value: CompressionMode; label: string; desc: string }[] = [
-  { value: "lossless", label: "Sin pérdida", desc: "Optimiza sin reducir calidad" },
-  { value: "balanced", label: "Equilibrado", desc: "Mejor relación calidad/tamaño" },
-  { value: "custom", label: "Personalizado", desc: "Control total con slider" },
-];
-
-const OUTPUT_FORMATS: { value: OutputFormat; label: string }[] = [
-  { value: "same", label: "Mismo formato" },
-  { value: "webp", label: "WebP" },
-  { value: "avif", label: "AVIF" },
-  { value: "jpeg", label: "JPEG" },
-  { value: "png", label: "PNG" },
-];
 
 export function SettingsPanel() {
   const settings = useAppStore((s) => s.settings);
   const updateSettings = useAppStore((s) => s.updateSettings);
+  const dict = useDict();
+
+  const MODES: { value: CompressionMode; label: string; desc: string }[] = [
+    { value: "lossless", label: dict.settings.lossless, desc: dict.settings.losslessDesc },
+    { value: "balanced", label: dict.settings.balanced, desc: dict.settings.balancedDesc },
+    { value: "custom",   label: dict.settings.custom,   desc: dict.settings.customDesc },
+  ];
+
+  const OUTPUT_FORMATS: { value: OutputFormat; label: string }[] = [
+    { value: "same", label: dict.settings.formatSame },
+    { value: "webp", label: "WebP" },
+    { value: "avif", label: "AVIF" },
+    { value: "jpeg", label: "JPEG" },
+    { value: "png",  label: "PNG" },
+  ];
 
   return (
     <div className="space-y-5 rounded-[var(--radius-lg)] border border-border bg-bg-elevated p-5 shadow-sm">
-      <h2 className="text-sm font-semibold text-text-primary">Configuración</h2>
+      <h2 className="text-sm font-semibold text-text-primary">{dict.settings.title}</h2>
 
       {/* Mode selector */}
       <div className="space-y-2">
-        <p className="text-xs font-medium text-text-secondary">Modo de compresión</p>
+        <p className="text-xs font-medium text-text-secondary">{dict.settings.compressionMode}</p>
         <div className="grid grid-cols-3 gap-2">
           {MODES.map((m) => (
             <button
@@ -53,7 +55,7 @@ export function SettingsPanel() {
       {settings.mode === "custom" && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-medium text-text-secondary">Calidad</p>
+            <p className="text-xs font-medium text-text-secondary">{dict.settings.quality}</p>
             <span className="font-mono text-xs text-text-primary">{settings.quality}</span>
           </div>
           <input
@@ -63,18 +65,18 @@ export function SettingsPanel() {
             value={settings.quality}
             onChange={(e) => updateSettings({ quality: Number(e.target.value) })}
             className="w-full accent-[var(--accent-primary)]"
-            aria-label="Calidad de compresión"
+            aria-label={dict.settings.quality}
           />
           <div className="flex justify-between font-mono text-[10px] text-text-tertiary">
-            <span>Mínima</span>
-            <span>Máxima</span>
+            <span>{dict.settings.qualityMin}</span>
+            <span>{dict.settings.qualityMax}</span>
           </div>
         </div>
       )}
 
       {/* Output format */}
       <div className="space-y-2">
-        <p className="text-xs font-medium text-text-secondary">Formato de salida</p>
+        <p className="text-xs font-medium text-text-secondary">{dict.settings.outputFormat}</p>
         <div className="flex flex-wrap gap-1.5">
           {OUTPUT_FORMATS.map((f) => (
             <button
@@ -96,8 +98,8 @@ export function SettingsPanel() {
       {/* Strip metadata toggle */}
       <label className="flex cursor-pointer items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-medium text-text-primary">Eliminar metadatos</p>
-          <p className="text-[11px] text-text-tertiary">Borra EXIF, GPS y datos del dispositivo</p>
+          <p className="text-xs font-medium text-text-primary">{dict.settings.stripMetadata}</p>
+          <p className="text-[11px] text-text-tertiary">{dict.settings.stripMetadataDesc}</p>
         </div>
         <button
           role="switch"

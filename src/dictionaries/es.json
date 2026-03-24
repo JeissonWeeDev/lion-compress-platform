@@ -1,0 +1,71 @@
+{
+  "metadata": {
+    "title": "LionMedia Compress — Comprime imágenes y video en tu navegador",
+    "description": "Comprime imágenes (JPG, PNG, WebP, AVIF) y video (MP4, WebM) directamente en tu navegador. 100% privado, gratuito, sin límites. Acelerado por WebAssembly y WebCodecs."
+  },
+  "hero": {
+    "title": "Comprime imágenes y video.",
+    "titleHighlight": "En tu navegador.",
+    "subtitle": "Procesamiento 100% local. Tus archivos nunca salen de tu dispositivo.",
+    "trustPrivacy": "100% Privado",
+    "trustHardware": "Acelerado por hardware",
+    "trustLimits": "Sin límites de tamaño"
+  },
+  "dropzone": {
+    "idle": "Arrastra tus archivos aquí",
+    "dragging": "Suelta tus archivos aquí",
+    "hint": "o haz clic para seleccionar · Ctrl+V para pegar",
+    "button": "Seleccionar archivos",
+    "regionLabel": "Zona de carga de archivos",
+    "errorEmpty": "El archivo está vacío.",
+    "errorUnsupported": "Formato .{ext} no soportado. Usa JPG, PNG, WebP, AVIF, MP4 o WebM.",
+    "errorVideoSize": "El video supera el límite de 2 GB.",
+    "errorImageSize": "La imagen supera el límite de 200 MB."
+  },
+  "fileList": {
+    "regionLabel": "Archivos cargados",
+    "fileOne": "archivo",
+    "fileOther": "archivos",
+    "downloadAll": "Descargar todo",
+    "clear": "Limpiar",
+    "clearLabel": "Eliminar todos los archivos"
+  },
+  "fileCard": {
+    "remove": "Eliminar archivo",
+    "download": "Descargar",
+    "defaultError": "No pudimos procesar este archivo."
+  },
+  "settings": {
+    "title": "Configuración",
+    "compressionMode": "Modo de compresión",
+    "lossless": "Sin pérdida",
+    "losslessDesc": "Optimiza sin reducir calidad",
+    "balanced": "Equilibrado",
+    "balancedDesc": "Mejor relación calidad/tamaño",
+    "custom": "Personalizado",
+    "customDesc": "Control total con slider",
+    "quality": "Calidad",
+    "qualityMin": "Mínima",
+    "qualityMax": "Máxima",
+    "outputFormat": "Formato de salida",
+    "formatSame": "Mismo formato",
+    "stripMetadata": "Eliminar metadatos",
+    "stripMetadataDesc": "Borra EXIF, GPS y datos del dispositivo"
+  },
+  "privacy": {
+    "note": "Tus archivos se procesan exclusivamente en tu dispositivo.",
+    "noteHighlight": "Nunca se suben a ningún servidor."
+  },
+  "theme": {
+    "toDark": "Cambiar a modo oscuro",
+    "toLight": "Cambiar a modo claro"
+  },
+  "language": {
+    "switchTo": "English",
+    "switchLabel": "Switch to English"
+  },
+  "footer": {
+    "privacy": "Todos tus archivos se procesan localmente.",
+    "builtWith": "Construido con Next.js · WebAssembly · WebCodecs"
+  }
+}

@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { X, FileVideo, Image, CheckCircle, AlertCircle } from "lucide-react";
 import { FileItem } from "@/types/compression";
+import { useDict } from "@/lib/i18n/context";
 import { formatBytes, savingsPercent } from "@/lib/utils/format-bytes";
 import { Progress } from "@/components/ui/Progress";
 import { Badge } from "@/components/ui/Badge";
@@ -16,6 +17,7 @@ interface FileCardProps {
 
 export function FileCard({ file }: FileCardProps) {
   const removeFile = useAppStore((s) => s.removeFile);
+  const dict = useDict();
 
   const savings = file.result
     ? savingsPercent(file.size, file.result.size)
@@ -75,7 +77,7 @@ export function FileCard({ file }: FileCardProps) {
           <Button
             variant="ghost"
             size="sm"
-            aria-label="Eliminar archivo"
+            aria-label={dict.fileCard.remove}
             onClick={() => removeFile(file.id)}
             className="size-7 shrink-0 p-0 text-text-tertiary hover:text-error"
           >
@@ -110,7 +112,7 @@ export function FileCard({ file }: FileCardProps) {
                 "cursor-pointer"
               )}
             >
-              Descargar
+              {dict.fileCard.download}
             </button>
           </div>
         )}
@@ -118,7 +120,7 @@ export function FileCard({ file }: FileCardProps) {
         {file.status === "error" && (
           <div className="flex items-center gap-1.5 text-xs text-error">
             <AlertCircle size={13} />
-            <span>{file.error ?? "No pudimos procesar este archivo."}</span>
+            <span>{file.error ?? dict.fileCard.defaultError}</span>
           </div>
         )}
       </div>
