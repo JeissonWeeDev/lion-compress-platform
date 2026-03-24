@@ -15,7 +15,7 @@ export function AppShell() {
   return (
     <div className="mx-auto w-full max-w-4xl space-y-6">
       {/* Settings + Drop zone layout */}
-      <div className="grid gap-5 lg:grid-cols-[1fr_280px]">
+      <div className="grid gap-5 lg:grid-cols-[1fr_350px]">
         <div className="space-y-5">
           <DropZone />
           <FileList />

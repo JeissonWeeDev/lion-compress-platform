@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes";
 import { DictionaryProvider } from "@/lib/i18n/context";
 import { getDictionary } from "@/lib/i18n/dictionaries";
 import { getLocale } from "@/lib/i18n/get-locale";
+import { Background } from "@/components/layout/Background";
 import "./globals.css";
 
 const inter = Inter({
@@ -58,8 +59,9 @@ export default async function RootLayout({
       suppressHydrationWarning
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-bg-primary text-text-primary">
+      <body className="min-h-full flex flex-col bg-bg-primary text-text-primary overflow-x-hidden">
         <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem>
+          <Background />
           <DictionaryProvider dict={dict} locale={locale}>
             {children}
           </DictionaryProvider>

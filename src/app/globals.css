@@ -127,13 +127,13 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   transition: background-color 200ms ease, color 200ms ease;
+  font-size: 18px; /* Increased from 16px base */
 }
 
-/* Focus visible — accessible, non-intrusive */
-:focus-visible {
-  outline: 2px solid var(--accent-primary);
-  outline-offset: 2px;
-  border-radius: 4px;
+/* Exclude footer from the font size increase */
+footer, 
+footer * {
+  font-size: 14px !important; /* Standard small footer size */
 }
 
 /* ================================================================
@@ -142,6 +142,17 @@ body {
 @theme inline {
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains-mono);
+
+  /* Increase standard text sizes by ~2px */
+  --text-xs: 0.875rem;     /* 12px -> 14px */
+  --text-sm: 1rem;         /* 14px -> 16px */
+  --text-base: 1.125rem;   /* 16px -> 18px */
+  --text-lg: 1.25rem;      /* 18px -> 20px */
+  --text-xl: 1.5rem;       /* 20px -> 24px */
+  --text-2xl: 1.75rem;     /* 24px -> 28px */
+  --text-3xl: 2.125rem;    /* 30px -> 34px */
+  --text-4xl: 2.5rem;      /* 36px -> 40px */
+  --text-5xl: 3.25rem;     /* 48px -> 52px */
 
   /* Expose semantic tokens to Tailwind */
   --color-bg-primary:     var(--bg-primary);

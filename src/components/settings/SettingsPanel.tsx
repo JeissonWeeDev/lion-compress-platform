@@ -1,9 +1,35 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { useAppStore } from "@/store/app-store";
 import { useDict } from "@/lib/i18n/context";
 import { CompressionMode, OutputFormat } from "@/types/compression";
 import { clsx } from "clsx";
+
+// Each mode has a dedicated color pulled from the design token palette
+const MODE_COLOR: Record<
+  CompressionMode,
+  { border: string; bg: string; text: string; dot: string }
+> = {
+  lossless: {
+    border: "var(--color-green-500)",
+    bg: "color-mix(in srgb, var(--color-green-500) 7%, transparent)",
+    text: "var(--color-green-500)",
+    dot: "var(--color-green-500)",
+  },
+  balanced: {
+    border: "var(--color-blue-500)",
+    bg: "color-mix(in srgb, var(--color-blue-500) 7%, transparent)",
+    text: "var(--color-blue-500)",
+    dot: "var(--color-blue-500)",
+  },
+  custom: {
+    border: "var(--color-purple-500)",
+    bg: "color-mix(in srgb, var(--color-purple-500) 7%, transparent)",
+    text: "var(--color-purple-500)",
+    dot: "var(--color-purple-500)",
+  },
+};
 
 export function SettingsPanel() {
   const settings = useAppStore((s) => s.settings);
@@ -32,31 +58,69 @@ export function SettingsPanel() {
       <div className="space-y-2">
         <p className="text-xs font-medium text-text-secondary">{dict.settings.compressionMode}</p>
         <div className="grid grid-cols-3 gap-2">
-          {MODES.map((m) => (
-            <button
-              key={m.value}
-              onClick={() => updateSettings({ mode: m.value })}
-              className={clsx(
-                "flex flex-col gap-0.5 rounded-[var(--radius-md)] border px-3 py-2.5 text-left",
-                "transition-all duration-150 cursor-pointer",
-                settings.mode === m.value
-                  ? "border-accent bg-accent/5 text-accent"
-                  : "border-border bg-bg-primary text-text-secondary hover:border-border-hover"
-              )}
-            >
-              <span className="text-xs font-semibold">{m.label}</span>
-              <span className="text-[10px] leading-tight opacity-70">{m.desc}</span>
-            </button>
-          ))}
+          {MODES.map((m) => {
+            const selected = settings.mode === m.value;
+            const color = MODE_COLOR[m.value];
+
+            return (
+              <motion.button
+                key={m.value}
+                onClick={() => updateSettings({ mode: m.value })}
+                animate={
+                  selected
+                    ? {
+                        borderColor: color.border,
+                        backgroundColor: color.bg,
+                        color: color.text,
+                      }
+                    : {
+                        borderColor: "var(--border-default)",
+                        backgroundColor: "transparent",
+                        color: "var(--text-secondary)",
+                      }
+                }
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                className={clsx(
+                  "relative flex flex-col gap-1 rounded-[var(--radius-md)] border px-3 py-2.5 text-left",
+                  "cursor-pointer overflow-hidden",
+                  !selected && "hover:border-[var(--border-hover)]"
+                )}
+              >
+                {/* Mode color indicator bar at the top */}
+                <motion.div
+                  className="absolute inset-x-0 top-0 h-[2px]"
+                  animate={{
+                    backgroundColor: selected ? color.dot : "transparent",
+                    opacity: selected ? 1 : 0,
+                  }}
+                  transition={{ duration: 0.2 }}
+                />
+
+                <span className="text-xs font-semibold leading-none">{m.label}</span>
+                <span className="text-[10px] leading-tight opacity-60">{m.desc}</span>
+              </motion.button>
+            );
+          })}
         </div>
       </div>
 
       {/* Quality slider — only for custom mode */}
       {settings.mode === "custom" && (
-        <div className="space-y-2">
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="space-y-2"
+        >
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-text-secondary">{dict.settings.quality}</p>
-            <span className="font-mono text-xs text-text-primary">{settings.quality}</span>
+            <span
+              className="rounded px-1.5 py-0.5 font-mono text-xs font-semibold text-white"
+              style={{ backgroundColor: MODE_COLOR.custom.dot }}
+            >
+              {settings.quality}
+            </span>
           </div>
           <input
             type="range"
@@ -64,14 +128,15 @@ export function SettingsPanel() {
             max={100}
             value={settings.quality}
             onChange={(e) => updateSettings({ quality: Number(e.target.value) })}
-            className="w-full accent-[var(--accent-primary)]"
+            className="w-full cursor-pointer"
+            style={{ accentColor: MODE_COLOR.custom.dot }}
             aria-label={dict.settings.quality}
           />
           <div className="flex justify-between font-mono text-[10px] text-text-tertiary">
             <span>{dict.settings.qualityMin}</span>
             <span>{dict.settings.qualityMax}</span>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Output format */}
@@ -86,7 +151,7 @@ export function SettingsPanel() {
                 "rounded-full border px-3 py-1 text-xs transition-all duration-150 cursor-pointer",
                 settings.outputFormat === f.value
                   ? "border-accent bg-accent/10 font-medium text-accent"
-                  : "border-border text-text-secondary hover:border-border-hover"
+                  : "border-border text-text-secondary hover:border-[var(--border-hover)]"
               )}
             >
               {f.label}
@@ -106,14 +171,14 @@ export function SettingsPanel() {
           aria-checked={settings.stripMetadata}
           onClick={() => updateSettings({ stripMetadata: !settings.stripMetadata })}
           className={clsx(
-            "relative h-5 w-9 rounded-full transition-colors duration-200",
+            "relative flex h-5 w-9 shrink-0 items-center rounded-full px-1 transition-colors duration-200 focus:outline-none",
             settings.stripMetadata ? "bg-accent" : "bg-bg-tertiary border border-border"
           )}
         >
           <span
             className={clsx(
-              "absolute top-0.5 size-4 rounded-full bg-white shadow transition-transform duration-200",
-              settings.stripMetadata ? "translate-x-4" : "translate-x-0.5"
+              "size-3.5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out",
+              settings.stripMetadata ? "translate-x-3.5" : "translate-x-0"
             )}
           />
         </button>
