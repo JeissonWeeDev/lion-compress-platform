@@ -6,9 +6,11 @@ import { DropZone } from "@/components/drop-zone/DropZone";
 import { FileList } from "@/components/file-list/FileList";
 import { SettingsPanel } from "@/components/settings/SettingsPanel";
 import { usePaste } from "@/hooks/usePaste";
+import { useCompression } from "@/hooks/useCompression";
 
 export function AppShell() {
   usePaste();
+  useCompression();
   const hasFiles = useAppStore((s) => s.files.length > 0);
   const dict = useDict();
 

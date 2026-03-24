@@ -26,6 +26,11 @@
     "regionLabel": "Archivos cargados",
     "fileOne": "archivo",
     "fileOther": "archivos",
+    "compressAll": "Comprimir todo",
+    "recompress": "Recomprimir",
+    "retryFailed": "Reintentar fallidos",
+    "compressing": "Comprimiendo…",
+    "savedSummary": "ahorrado",
     "downloadAll": "Descargar todo",
     "clear": "Limpiar",
     "clearLabel": "Eliminar todos los archivos"

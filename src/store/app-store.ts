@@ -15,12 +15,17 @@ interface AppStore {
   files: FileItem[];
   settings: CompressionSettings;
   isFirstVisit: boolean;
+  compressionTrigger: number; // increments each time the user clicks "Compress"
 
   // File actions
   addFiles: (newFiles: File[]) => string[];
   removeFile: (id: string) => void;
   clearAll: () => void;
   updateFile: (id: string, updates: Partial<FileItem>) => void;
+  requeueAll: () => void;
+
+  // Compression trigger
+  triggerCompression: () => void;
 
   // Settings actions
   updateSettings: (updates: Partial<CompressionSettings>) => void;
@@ -38,6 +43,7 @@ export const useAppStore = create<AppStore>()(
       files: [],
       settings: DEFAULT_SETTINGS,
       isFirstVisit: true,
+      compressionTrigger: 0,
 
       addFiles: (newFiles) => {
         const existing = get().files;
@@ -93,6 +99,19 @@ export const useAppStore = create<AppStore>()(
           ),
         }));
       },
+
+      requeueAll: () => {
+        set((state) => ({
+          files: state.files.map((f) =>
+            f.status === "completed" || f.status === "error"
+              ? { ...f, status: "queued" as FileStatus, progress: 0, error: undefined, result: undefined }
+              : f
+          ),
+        }));
+      },
+
+      triggerCompression: () =>
+        set((state) => ({ compressionTrigger: state.compressionTrigger + 1 })),
 
       updateSettings: (updates) => {
         set((state) => ({

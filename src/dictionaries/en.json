@@ -26,6 +26,11 @@
     "regionLabel": "Loaded files",
     "fileOne": "file",
     "fileOther": "files",
+    "compressAll": "Compress all",
+    "recompress": "Re-compress",
+    "retryFailed": "Retry failed",
+    "compressing": "Compressing…",
+    "savedSummary": "saved",
     "downloadAll": "Download all",
     "clear": "Clear",
     "clearLabel": "Remove all files"
