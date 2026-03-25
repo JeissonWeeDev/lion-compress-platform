@@ -5,19 +5,18 @@ import { useAppStore } from "@/store/app-store";
 import type { WorkerRequest, WorkerResponse } from "@/lib/compression/worker-types";
 import { resolveOutputMime, resolveQuality, calcSavings } from "@/lib/compression/engine";
 
-const MAX_CONCURRENT = 2;
+const MAX_IMG_CONCURRENT = 2; // images are fast — 2 at a time
+const MAX_VID_CONCURRENT = 1; // video is CPU/memory heavy — 1 at a time
 
 /**
- * Manages image compression.
+ * Orchestrates image and video compression.
  *
  * Compression ONLY starts when the user explicitly triggers it via
  * triggerCompression() in the store. Files added before or after that click
- * stay in "queued" state until the next trigger.
+ * stay in "queued" state until the next explicit trigger.
  *
- * Once a session starts it drains the queue automatically (up to MAX_CONCURRENT
- * at a time) until every queued file is processed. New files added mid-session
- * join the active session. New files added AFTER the session ends wait for the
- * next explicit trigger.
+ * Images   → image.worker.ts  (OffscreenCanvas / oxipng for PNG)
+ * Videos   → video.worker.ts  (mediabunny + WebCodecs)
  */
 export function useCompression() {
   const files              = useAppStore((s) => s.files);
@@ -25,22 +24,75 @@ export function useCompression() {
   const settings           = useAppStore((s) => s.settings);
   const compressionTrigger = useAppStore((s) => s.compressionTrigger);
 
-  const activeIds          = useRef<Set<string>>(new Set());
-  const workerRef          = useRef<Worker | null>(null);
-  const hasOffscreen       = useRef<boolean | null>(null);
+  // ── Image worker ─────────────────────────────────────────────────────────
+  const imageActiveIds = useRef<Set<string>>(new Set());
+  const imageWorkerRef = useRef<Worker | null>(null);
+  const hasOffscreen   = useRef<boolean | null>(null);
 
-  // Session tracking — avoids re-using an old trigger value for new files
-  const isSessionActive       = useRef(false);
-  const lastProcessedTrigger  = useRef(0);
+  // ── Video worker ──────────────────────────────────────────────────────────
+  const videoActiveIds = useRef<Set<string>>(new Set());
+  const videoWorkerRef = useRef<Worker | null>(null);
+
+  // ── Session tracking ──────────────────────────────────────────────────────
+  const isSessionActive      = useRef(false);
+  const lastProcessedTrigger = useRef(0);
 
   // Stable ref so worker callbacks never capture a stale updateFile
   const updateFileRef = useRef(updateFile);
   updateFileRef.current = updateFile;
 
-  // ── Worker ────────────────────────────────────────────────────────────────
+  // ── Worker factory helpers ────────────────────────────────────────────────
 
-  function getWorker(): Worker | null {
-    if (workerRef.current) return workerRef.current;
+  function makeWorkerHandler(activeIds: React.MutableRefObject<Set<string>>) {
+    return (e: MessageEvent<WorkerResponse>) => {
+      const msg = e.data;
+      const { id } = msg;
+
+      if (msg.type === "progress") {
+        updateFileRef.current(id, { progress: msg.progress });
+        return;
+      }
+
+      activeIds.current.delete(id);
+
+      if (msg.type === "done") {
+        updateFileRef.current(id, {
+          status: "completed",
+          progress: 100,
+          result: {
+            blob:         msg.blob,
+            size:         msg.size,
+            savings:      msg.savings,
+            outputFormat: msg.outputFormat,
+            duration:     msg.duration,
+          },
+        });
+      } else if (msg.type === "error") {
+        updateFileRef.current(id, {
+          status: "error",
+          progress: 0,
+          error: msg.message,
+        });
+      }
+    };
+  }
+
+  function makeWorkerErrorHandler(activeIds: React.MutableRefObject<Set<string>>, ref: React.MutableRefObject<Worker | null>) {
+    return (err: ErrorEvent) => {
+      console.error("[worker] crash:", err.message);
+      for (const id of activeIds.current) {
+        updateFileRef.current(id, {
+          status: "error",
+          error: "Worker crashed — please try again",
+        });
+      }
+      activeIds.current.clear();
+      ref.current = null;
+    };
+  }
+
+  function getImageWorker(): Worker | null {
+    if (imageWorkerRef.current) return imageWorkerRef.current;
 
     if (hasOffscreen.current === null) {
       hasOffscreen.current = typeof OffscreenCanvas !== "undefined";
@@ -52,61 +104,35 @@ export function useCompression() {
         new URL("../../workers/image.worker.ts", import.meta.url),
         { type: "module" }
       );
-
-      w.onmessage = (e: MessageEvent<WorkerResponse>) => {
-        const msg = e.data;
-        const { id } = msg;
-
-        if (msg.type === "progress") {
-          updateFileRef.current(id, { progress: msg.progress });
-          return;
-        }
-
-        activeIds.current.delete(id);
-
-        if (msg.type === "done") {
-          updateFileRef.current(id, {
-            status: "completed",
-            progress: 100,
-            result: {
-              blob:         msg.blob,
-              size:         msg.size,
-              savings:      msg.savings,
-              outputFormat: msg.outputFormat,
-              duration:     msg.duration,
-            },
-          });
-        } else if (msg.type === "error") {
-          updateFileRef.current(id, {
-            status: "error",
-            progress: 0,
-            error: msg.message,
-          });
-        }
-      };
-
-      w.onerror = (err) => {
-        console.error("[image.worker] crash:", err.message);
-        for (const id of activeIds.current) {
-          updateFileRef.current(id, {
-            status: "error",
-            error: "Worker crashed — please try again",
-          });
-        }
-        activeIds.current.clear();
-        workerRef.current = null;
-      };
-
-      workerRef.current = w;
+      w.onmessage  = makeWorkerHandler(imageActiveIds);
+      w.onerror    = makeWorkerErrorHandler(imageActiveIds, imageWorkerRef);
+      imageWorkerRef.current = w;
       return w;
     } catch {
       return null;
     }
   }
 
-  // ── Main-thread fallback ──────────────────────────────────────────────────
+  function getVideoWorker(): Worker | null {
+    if (videoWorkerRef.current) return videoWorkerRef.current;
 
-  async function compressOnMainThread(id: string, file: File) {
+    try {
+      const w = new Worker(
+        new URL("../../workers/video.worker.ts", import.meta.url),
+        { type: "module" }
+      );
+      w.onmessage = makeWorkerHandler(videoActiveIds);
+      w.onerror   = makeWorkerErrorHandler(videoActiveIds, videoWorkerRef);
+      videoWorkerRef.current = w;
+      return w;
+    } catch {
+      return null;
+    }
+  }
+
+  // ── Main-thread fallback (Safari < 16.4 — no OffscreenCanvas) ────────────
+
+  async function compressImageOnMainThread(id: string, file: File) {
     const s = useAppStore.getState().settings;
     updateFileRef.current(id, { status: "processing", progress: 10 });
 
@@ -158,71 +184,83 @@ export function useCompression() {
         error: err instanceof Error ? err.message : "Compression failed",
       });
     } finally {
-      activeIds.current.delete(id);
+      imageActiveIds.current.delete(id);
     }
   }
 
   // ── Queue processor ────────────────────────────────────────────────────────
-  //
-  // Runs whenever files or compressionTrigger changes.
-  //
-  // Session lifecycle:
-  //   trigger counter increments → start session
-  //   no more queued/active files → end session
-  //   new files added after session ends → stay queued until next trigger
-  //
+
   useEffect(() => {
-    // ── Start a new session when the trigger counter increments ──
+    // Start a new session when the trigger counter increments
     if (compressionTrigger > lastProcessedTrigger.current) {
       lastProcessedTrigger.current = compressionTrigger;
       isSessionActive.current = true;
     }
 
-    // Nothing to do if no active session
     if (!isSessionActive.current) return;
 
-    const queued = files.filter(
-      (f) =>
-        f.status === "queued" &&
-        f.type === "image" &&
-        !activeIds.current.has(f.id)
-    );
+    const queued = files.filter((f) => f.status === "queued");
 
-    // End session when everything is done
-    if (queued.length === 0 && activeIds.current.size === 0) {
+    // End session when nothing is left to process
+    const imageActive = imageActiveIds.current.size;
+    const videoActive = videoActiveIds.current.size;
+    const queuedImages = queued.filter((f) => f.type === "image" && !imageActiveIds.current.has(f.id));
+    const queuedVideos = queued.filter((f) => f.type === "video" && !videoActiveIds.current.has(f.id));
+
+    if (
+      queuedImages.length === 0 && imageActive === 0 &&
+      queuedVideos.length === 0 && videoActive === 0
+    ) {
       isSessionActive.current = false;
       return;
     }
 
-    const slots = MAX_CONCURRENT - activeIds.current.size;
-    if (slots <= 0 || queued.length === 0) return;
+    // ── Dispatch images ────────────────────────────────────────────────────
+    const imgSlots   = MAX_IMG_CONCURRENT - imageActive;
+    const toImages   = queuedImages.slice(0, Math.max(0, imgSlots));
+    const imgWorker  = toImages.length > 0 ? getImageWorker() : null;
 
-    const toProcess = queued.slice(0, slots);
-    const worker    = getWorker();
-
-    for (const item of toProcess) {
-      activeIds.current.add(item.id);
+    for (const item of toImages) {
+      imageActiveIds.current.add(item.id);
       updateFile(item.id, { status: "processing", progress: 5 });
 
-      if (worker) {
-        const req: WorkerRequest = { id: item.id, file: item.file, settings };
-        worker.postMessage(req);
+      if (imgWorker) {
+        imgWorker.postMessage({ id: item.id, file: item.file, settings } satisfies WorkerRequest);
       } else {
-        compressOnMainThread(item.id, item.file);
+        compressImageOnMainThread(item.id, item.file);
+      }
+    }
+
+    // ── Dispatch videos ────────────────────────────────────────────────────
+    const vidSlots  = MAX_VID_CONCURRENT - videoActive;
+    const toVideos  = queuedVideos.slice(0, Math.max(0, vidSlots));
+    const vidWorker = toVideos.length > 0 ? getVideoWorker() : null;
+
+    for (const item of toVideos) {
+      videoActiveIds.current.add(item.id);
+      updateFile(item.id, { status: "processing", progress: 5 });
+
+      if (vidWorker) {
+        vidWorker.postMessage({ id: item.id, file: item.file, settings } satisfies WorkerRequest);
+      } else {
+        updateFileRef.current(item.id, {
+          status: "error",
+          error: "Could not create video worker",
+        });
+        videoActiveIds.current.delete(item.id);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [files, compressionTrigger]);
-  // Note: settings, updateFile, getWorker are intentionally excluded — they are
-  // either stable references or accessed via refs/getState() to avoid re-firing
-  // the effect when only settings change (that would auto-restart compression).
 
   // ── Cleanup ────────────────────────────────────────────────────────────────
 
   useEffect(() => {
     return () => {
-      workerRef.current?.terminate();
-      workerRef.current = null;
+      imageWorkerRef.current?.terminate();
+      imageWorkerRef.current = null;
+      videoWorkerRef.current?.terminate();
+      videoWorkerRef.current = null;
     };
   }, []);
 }

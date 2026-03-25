@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveOutputMime, resolveQuality, calcSavings } from "../engine";
+import { resolveOutputMime, resolveQuality, resolvePngLevel, calcSavings } from "../engine";
 import type { CompressionSettings } from "@/types/compression";
 
 const BASE: CompressionSettings = {
@@ -109,6 +109,30 @@ describe("resolveQuality", () => {
       const s = { ...BASE, mode: "custom", quality: 100 } as CompressionSettings;
       expect(resolveQuality(s, "image/jpeg")).toBeCloseTo(1.0);
     });
+  });
+});
+
+// ─── resolvePngLevel ──────────────────────────────────────────────────────────
+
+describe("resolvePngLevel", () => {
+  it("returns level 4 for lossless mode", () => {
+    expect(resolvePngLevel({ ...BASE, mode: "lossless" })).toBe(4);
+  });
+
+  it("returns level 2 for balanced mode", () => {
+    expect(resolvePngLevel({ ...BASE, mode: "balanced" })).toBe(2);
+  });
+
+  it("maps quality=100 to level 6 in custom mode", () => {
+    expect(resolvePngLevel({ ...BASE, mode: "custom", quality: 100 })).toBe(6);
+  });
+
+  it("maps quality=50 to level 3 in custom mode", () => {
+    expect(resolvePngLevel({ ...BASE, mode: "custom", quality: 50 })).toBe(3);
+  });
+
+  it("maps quality=1 to minimum level 1 in custom mode", () => {
+    expect(resolvePngLevel({ ...BASE, mode: "custom", quality: 1 })).toBe(1);
   });
 });
 
