@@ -66,11 +66,14 @@ export function SettingsPanel() {
               <motion.button
                 key={m.value}
                 onClick={() => updateSettings({ mode: m.value })}
+                whileHover={!selected ? { 
+                  borderColor: "var(--color-text-tertiary)",
+                } : {}}
                 animate={
                   selected
                     ? {
                         borderColor: color.border,
-                        backgroundColor: color.bg,
+                        backgroundColor: color.bg, // Mantengo el fondo suave de color solo para el activo para que resalte
                         color: color.text,
                       }
                     : {
@@ -79,11 +82,10 @@ export function SettingsPanel() {
                         color: "var(--text-secondary)",
                       }
                 }
-                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: 0.15, ease: "linear" }}
                 className={clsx(
                   "relative flex flex-col gap-1 rounded-[var(--radius-md)] border px-3 py-2.5 text-left",
-                  "cursor-pointer overflow-hidden",
-                  !selected && "hover:border-[var(--border-hover)]"
+                  "cursor-pointer overflow-hidden"
                 )}
               >
                 {/* Mode color indicator bar at the top */}

@@ -120,7 +120,7 @@ export function FileCard({ file }: FileCardProps) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.96 }}
       transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-      className="group/card flex items-start gap-3 rounded-[var(--radius-lg)] border border-border bg-bg-elevated p-3 shadow-sm"
+      className="group/card flex items-start gap-3.5 rounded-[var(--radius-lg)] border border-border bg-bg-elevated px-4 py-3 shadow-sm"
     >
       {/* ── Thumbnail with X overlay ─────────────────────────────────────── */}
       <div className="relative shrink-0">
@@ -214,9 +214,9 @@ export function FileCard({ file }: FileCardProps) {
         {file.status === "completed" && file.result && (
           <button
             onClick={handleDownload}
-            className="flex items-center gap-1 text-[11px] text-accent underline-offset-2 hover:underline cursor-pointer"
+            className="flex items-center gap-1.5 text-xs text-accent underline-offset-2 hover:underline cursor-pointer"
           >
-            <Download size={11} strokeWidth={2} />
+            <Download size={13} strokeWidth={2} />
             {dict.fileCard.download}
           </button>
         )}

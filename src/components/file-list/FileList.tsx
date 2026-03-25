@@ -226,7 +226,7 @@ export function FileList() {
       </div>
 
       {/* ── File cards ─────────────────────────────────────────────────────── */}
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2">
         <AnimatePresence mode="popLayout">
           {files.map((file) => (
             <FileCard key={file.id} file={file} />
