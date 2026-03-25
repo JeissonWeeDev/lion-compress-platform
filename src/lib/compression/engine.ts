@@ -55,6 +55,25 @@ export function resolveQuality(
   return 1; // PNG — quality param is ignored by canvas
 }
 
+// ─── PNG-specific compression level ───────────────────────────────────────────
+
+/**
+ * Maps mode/quality to an oxipng optimization level (0–6).
+ * Oxipng is always lossless — the level only affects compression effort vs speed.
+ * Higher level = smaller file but slower.
+ *
+ *   lossless → 4  (thorough, user expects smallest possible)
+ *   balanced → 2  (fast, good enough for batch compression)
+ *   custom   → 1–6 mapped from the quality slider
+ *              (quality=100 → max effort, quality=1 → min effort)
+ */
+export function resolvePngLevel(settings: CompressionSettings): number {
+  if (settings.mode === "lossless") return 4;
+  if (settings.mode === "balanced") return 2;
+  // custom: quality 1–100 → level 1–6
+  return Math.max(1, Math.round((settings.quality / 100) * 6));
+}
+
 // ─── Savings ───────────────────────────────────────────────────────────────────
 
 /** Returns savings as a 0–100 percentage (never negative). */
