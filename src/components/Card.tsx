@@ -5,5 +5,6 @@ interface CardProps {
 }
 
 export function Card(props: CardProps) {
-  return <div>{props.title}</div>;
+  const style = { padding: "16px", border: "1px solid #ccc" };
+  return <div style={style}>{props.title}</div>;
 }
