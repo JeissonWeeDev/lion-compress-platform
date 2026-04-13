@@ -2,8 +2,9 @@ import React from "react";
 
 interface ButtonProps {
   label: string;
+  onClick?: () => void;
 }
 
 export function Button(props: ButtonProps) {
-  return <button>{props.label}</button>;
+  return <button onClick={props.onClick}>{props.label}</button>;
 }
