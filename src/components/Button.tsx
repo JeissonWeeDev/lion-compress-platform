@@ -6,5 +6,10 @@ interface ButtonProps {
 }
 
 export function Button(props: ButtonProps) {
-  return <button onClick={props.onClick}>{props.label}</button>;
+  const style = { padding: "8px 16px", background: "#007bff", color: "#fff" };
+  return (
+    <button style={style} onClick={props.onClick}>
+      {props.label}
+    </button>
+  );
 }
