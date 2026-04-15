@@ -1,3 +1,4 @@
 export function validateEmail(email: string): boolean {
-  return email.includes("@");
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
 }
