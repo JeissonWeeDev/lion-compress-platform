@@ -7,5 +7,6 @@ interface InputProps {
 }
 
 export function Input(props: InputProps) {
-  return <input placeholder={props.placeholder} value={props.value} />;
+  const style = { padding: "8px", border: "1px solid #ccc", borderRadius: "4px" };
+  return <input style={style} placeholder={props.placeholder} value={props.value} />;
 }
