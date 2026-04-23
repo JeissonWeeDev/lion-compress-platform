@@ -5,5 +5,6 @@ interface ContainerProps {
 }
 
 export function Container(props: ContainerProps) {
-  return <div>{props.children}</div>;
+  const style = { maxWidth: "1200px", margin: "0 auto", padding: "16px" };
+  return <div style={style}>{props.children}</div>;
 }
