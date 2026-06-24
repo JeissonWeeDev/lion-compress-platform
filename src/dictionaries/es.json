@@ -73,7 +73,8 @@
     "privacy": "Todos tus archivos se procesan localmente.",
     "builtWith": "Construido con Next.js · WebAssembly · WebCodecs",
     "privacyLink": "Privacidad",
-    "termsLink": "Términos"
+    "termsLink": "Términos",
+    "designedBy": "Diseñado por Jeisson Leon"
   },
   "legal": {
     "privacyTitle": "Política de privacidad",

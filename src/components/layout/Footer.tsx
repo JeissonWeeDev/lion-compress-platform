@@ -11,7 +11,7 @@ export function Footer() {
     <footer className="mt-auto border-t border-border py-6">
       <Container className="flex flex-col items-center justify-between gap-4 text-[11px] text-text-tertiary sm:flex-row">
         <p>
-          &copy; {new Date().getFullYear()} Lion Labs. {dict.footer.privacy}
+          &copy; {new Date().getFullYear()} {dict.footer.designedBy}. {dict.footer.privacy}
         </p>
         <div className="flex items-center gap-3 font-medium">
           <Link
