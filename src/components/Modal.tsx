@@ -8,7 +8,7 @@ interface ModalProps {
 export function Modal(props: ModalProps) {
   if (!props.isOpen) return null;
   const style = {
-    position: "fixed",
+    position: "fixed" as const,
     top: 0,
     left: 0,
     right: 0,
