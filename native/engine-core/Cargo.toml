@@ -1,0 +1,16 @@
+[package]
+name = "lion-engine-core"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.70"
+description = "Reference systems-level implementation of LionMedia Compress' pure compression helpers."
+license = "Apache-2.0"
+publish = false
+
+[lib]
+name = "lion_engine_core"
+path = "src/lib.rs"
+
+[profile.release]
+lto = true
+codegen-units = 1
