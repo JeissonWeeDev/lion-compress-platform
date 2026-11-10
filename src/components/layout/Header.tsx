@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Container } from "./Container";
 import { ThemeToggle } from "@/components/common/ThemeToggle";
 import { LanguageToggle } from "@/components/common/LanguageToggle";
@@ -32,12 +33,12 @@ export function Header() {
     >
       <Container className="flex h-14 items-center justify-between">
         {/* Logo */}
-        <a href="/" className="flex items-center gap-2 font-semibold text-text-primary">
+        <Link href="/" className="flex items-center gap-2 font-semibold text-text-primary">
           <span className="flex size-7 items-center justify-center rounded-[var(--radius-sm)] bg-accent text-white shadow-sm">
             <Zap size={14} strokeWidth={2.5} />
           </span>
           <span className="text-sm tracking-tight">LionCompress</span>
-        </a>
+        </Link>
 
         <div className="flex items-center gap-1">
           <LanguageToggle />

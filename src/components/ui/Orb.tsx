@@ -299,6 +299,9 @@ export default function Orb({
       }
       gl.getExtension('WEBGL_lose_context')?.loseContext();
     };
+    // The shader sources (vert/frag) are static strings defined above and never
+    // change, so they are intentionally omitted from the dependency array.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hue, hoverIntensity, rotateOnHover, forceHoverState, backgroundColor]);
 
   return <div ref={ctnDom} className={className} />;
