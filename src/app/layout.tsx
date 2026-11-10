@@ -22,15 +22,16 @@ const jetbrainsMono = JetBrains_Mono({
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   const dict = await getDictionary(locale);
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://lioncom.vercel.app";
 
   return {
     title: dict.metadata.title,
     description: dict.metadata.description,
-    metadataBase: new URL("https://lioncompress.dev"),
+    metadataBase: new URL(siteUrl),
     openGraph: {
       title: "LionMedia Compress",
       description: dict.hero.subtitle,
-      url: "https://lioncompress.dev",
+      url: siteUrl,
       siteName: "LionMedia Compress",
       images: [{ url: "/og-image.png", width: 1200, height: 630 }],
       type: "website",

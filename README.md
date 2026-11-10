@@ -2,6 +2,8 @@
 
 > Privacy-first image & video compression that runs **100% in your browser**. No uploads, no queues, no servers touching your files.
 
+**Live demo:** [lioncom.vercel.app](https://lioncom.vercel.app)
+
 [![Version](https://img.shields.io/github/v/tag/JeissonWeeDev/lion-compress-platform?label=version&color=blue)](https://github.com/JeissonWeeDev/lion-compress-platform/releases)
 [![Next.js](https://img.shields.io/badge/Next.js-16.2-000000?logo=next.js&logoColor=white)](https://nextjs.org)
 [![React](https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=black)](https://react.dev)
@@ -125,6 +127,15 @@ bun run dev      # or: npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+Optional: set the public site URL used for canonical and Open Graph metadata.
+
+```bash
+cp .env.example .env.local
+# NEXT_PUBLIC_SITE_URL=https://lioncom.vercel.app
+```
+
+It defaults to `https://lioncom.vercel.app` when unset.
 
 ### Production build
 
