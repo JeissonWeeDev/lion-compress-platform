@@ -1,0 +1,41 @@
+name: Performance issue
+description: Report slow rendering, memory pressure, or long compression tasks.
+title: "perf: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: scenario
+    attributes:
+      label: Scenario
+      description: What were you doing when performance dropped?
+      placeholder: "Added 120 images and started a batch compression..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: measurement
+    attributes:
+      label: Measurements
+      description: FPS, long tasks, memory, timings, or a Performance profile summary.
+    validations:
+      required: true
+
+  - type: input
+    id: hardware
+    attributes:
+      label: Hardware and browser
+      placeholder: "M1 MacBook Air / Chrome 131 / 8 GB RAM"
+
+  - type: textarea
+    id: hypothesis
+    attributes:
+      label: Hypotheses
+      description: Suspected causes (re-renders, worker contention, thumbnails, etc.).
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-flight checks
+      options:
+        - label: I reproduced this with a production build (`npm run build && npm run start`).
+          required: false

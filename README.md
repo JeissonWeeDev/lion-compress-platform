@@ -250,11 +250,17 @@ Unsupported capabilities are detected through `src/lib/utils/browser-support.ts`
 
 ## Roadmap
 
+The full, prioritized backlog lives in [`docs/BACKLOG.md`](./docs/BACKLOG.md)
+(labels, milestones and ready-to-file issue drafts). Highlights:
+
+- [ ] Fix PNG → PNG edge cases and surface "already optimal" results.
+- [ ] Keep the file list fast with 100+ files.
+- [ ] Download only the selected compressed files.
+- [ ] Add regional locales and `hreflang` alternates.
+- [ ] Expand compression controls (resize, per-file overrides, custom presets).
+- [ ] Optimize for AI search and answer engines (JSON-LD, `llms.txt`, FAQ).
 - [ ] Before/after visual comparison slider.
-- [ ] Optional max-width / max-height resizing controls (types already defined).
-- [ ] Pluggable ad adapter (types drafted in `src/types/ads.ts`).
 - [ ] PWA / offline support.
-- [ ] Additional container conversions for video.
 - [ ] End-to-end tests for worker pipelines.
 
 ---

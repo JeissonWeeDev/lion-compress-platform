@@ -1,0 +1,68 @@
+name: Bug report
+description: Report a problem with compression, the UI, i18n, or the build.
+title: "fix: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report an issue. Please avoid attaching
+        private media; use small synthetic fixtures when possible.
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the app
+        2. Add a PNG file
+        3. Choose "Lossless" and click Compress
+        4. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: input
+    id: file
+    attributes:
+      label: File details
+      description: Type, dimensions, and size of the input file (do not upload private content).
+      placeholder: "PNG, 4032×3024, 12.4 MB"
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: "Chrome 131 / macOS 15 / Node 22"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console output or screenshots
+      description: Paste errors from the browser console or worker logs.
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-flight checks
+      options:
+        - label: I searched existing issues before opening this one.
+          required: true
+        - label: I can reproduce this consistently.
+          required: false
