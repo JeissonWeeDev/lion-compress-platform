@@ -2,6 +2,7 @@
 
 > Privacy-first image & video compression that runs **100% in your browser**. No uploads, no queues, no servers touching your files.
 
+[![Version](https://img.shields.io/github/v/tag/JeissonWeeDev/lion-compress-platform?label=version&color=blue)](https://github.com/JeissonWeeDev/lion-compress-platform/releases)
 [![Next.js](https://img.shields.io/badge/Next.js-16.2-000000?logo=next.js&logoColor=white)](https://nextjs.org)
 [![React](https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=black)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
