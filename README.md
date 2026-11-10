@@ -6,7 +6,7 @@
 [![React](https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=black)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![Tests](https://img.shields.io/badge/tests-29%20passing-brightgreen)](#testing)
+[![Tests](https://img.shields.io/badge/tests-29%20TS%20%2B%2046%20Rust-brightgreen)](#testing)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](./LICENSE)
 
 ---
@@ -93,18 +93,19 @@ flowchart LR
 
 ## Tech stack
 
-| Layer     | Technology                                                                             |
-| --------- | -------------------------------------------------------------------------------------- |
-| Framework | [Next.js 16](https://nextjs.org) (App Router)                                          |
-| UI        | React 19, Tailwind CSS 4, Framer Motion, Lucide icons                                  |
-| State     | [Zustand 5](https://zustand.docs.pmnd.rs) with `persist`                               |
-| Images    | [`@jsquash/oxipng`](https://github.com/jamsinclair/jSquash) (WASM) + `OffscreenCanvas` |
-| Video     | [`mediabunny`](https://mediabunny.dev) + WebCodecs                                     |
-| Files     | `JSZip`, `nanoid`, `clsx`                                                              |
-| Themes    | `next-themes`                                                                          |
-| i18n      | Custom dictionary-based provider (ES/EN)                                               |
-| Testing   | [Vitest](https://vitest.dev) + Testing Library                                         |
-| Quality   | ESLint (flat config), Prettier, TypeScript strict mode                                 |
+| Layer             | Technology                                                                             |
+| ----------------- | -------------------------------------------------------------------------------------- |
+| Framework         | [Next.js 16](https://nextjs.org) (App Router)                                          |
+| UI                | React 19, Tailwind CSS 4, Framer Motion, Lucide icons                                  |
+| State             | [Zustand 5](https://zustand.docs.pmnd.rs) with `persist`                               |
+| Images            | [`@jsquash/oxipng`](https://github.com/jamsinclair/jSquash) (WASM) + `OffscreenCanvas` |
+| Video             | [`mediabunny`](https://mediabunny.dev) + WebCodecs                                     |
+| Files             | `JSZip`, `nanoid`, `clsx`                                                              |
+| Themes            | `next-themes`                                                                          |
+| i18n              | Custom dictionary-based provider (ES/EN)                                               |
+| Testing           | [Vitest](https://vitest.dev) + Testing Library                                         |
+| Systems reference | Rust (`native/engine-core`, not part of the runtime)                                   |
+| Quality           | ESLint (flat config), Prettier, TypeScript strict mode                                 |
 
 ---
 
@@ -176,6 +177,8 @@ bun run start
 ├── workers/
 │   ├── image.worker.ts       # Image compression worker
 │   └── video.worker.ts       # Video compression worker
+├── native/
+│   └── engine-core/          # Rust reference implementation of the engine
 ├── tests/setup.ts            # Vitest setup
 └── public/                   # Static assets
 ```
@@ -199,6 +202,25 @@ Current coverage focuses on:
 - Savings calculation, including zero-size and non-improving edge cases.
 
 **29 tests pass** across the engine suite.
+
+### Rust reference module
+
+`native/engine-core/` is a dependency-free Rust crate that mirrors the pure
+compression helpers (MIME resolution, quality mapping, PNG level, savings math,
+byte formatting, and magic-byte detection). It exists as a systems-level
+reference and a parity harness; it is **not** imported by the Next.js build and
+does not affect production behavior.
+
+```bash
+cd native/engine-core
+cargo fmt --check
+cargo clippy --all-targets -- -D warnings
+cargo test
+```
+
+The crate forbids `unsafe` code, has no third-party dependencies, and ships
+**46 tests** (unit, integration, and doc tests). See
+[`native/engine-core/README.md`](./native/engine-core/README.md) for details.
 
 ---
 
