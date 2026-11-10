@@ -1,0 +1,40 @@
+name: Rust reference module
+
+on:
+  push:
+    paths:
+      - "native/engine-core/**"
+      - ".github/workflows/rust.yml"
+  pull_request:
+    paths:
+      - "native/engine-core/**"
+      - ".github/workflows/rust.yml"
+
+jobs:
+  test:
+    name: fmt, clippy, test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: native/engine-core
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: native/engine-core
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Lint
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Test
+        run: cargo test
